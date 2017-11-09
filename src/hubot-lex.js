@@ -1,4 +1,4 @@
-'use strict'
+"use strict";
 
 // Description
 //   A hubot script that interacts with AWS Lex
@@ -18,10 +18,10 @@
 
 module.exports = (robot) => {
   robot.respond(/hello/, (message) => {
-    message.reply('hello!')
-  })
+    message.reply("hello!");
+  });
 
   robot.hear(/orly/, (message) => {
-    message.send('yarly')
-  })
-}
+    message.send("yarly");
+  });
+};

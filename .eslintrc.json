@@ -1,0 +1,11 @@
+{
+  "plugins": ["mocha", "node", "security"],
+  "extends": ["eslint:recommended", "plugin:node/recommended", "plugin:security/recommended"],
+  "rules": {
+    "node/no-unpublished-require": ["error", {
+      "allowModules": ["chai", "sinon-chai"]
+    }],
+    "quotes": ["error", "double"],
+    "semi": ["error", "always"]
+  }
+}
