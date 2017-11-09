@@ -21,11 +21,11 @@
     "hubot": ">=2 <10 || 0.0.0-development"
   },
   "devDependencies": {
-    "chai": "^2.1.1",
-    "hubot": "^3.0.0",
+    "chai": "^4.1.2",
+    "hubot": "^3.0.1",
     "hubot-mock-adapter-v3": "^1.0.1",
-    "mocha": "^2.1.0",
-    "sinon": "^1.13.0",
+    "mocha": "^4.0.1",
+    "sinon": "^4.1.2",
     "sinon-chai": "^2.7.0"
   },
   "main": "index.js",
