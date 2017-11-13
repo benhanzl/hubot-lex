@@ -16,7 +16,9 @@
   "bugs": {
     "url": "https://github.com/benhanzl/hubot-lex/issues"
   },
-  "dependencies": {},
+  "dependencies": {
+    "safe-regex": "^1.1.0"
+  },
   "peerDependencies": {
     "hubot": ">=2 <10 || 0.0.0-development"
   },
@@ -33,11 +35,12 @@
     "hubot": "^3.0.1",
     "hubot-mock-adapter-v3": "^1.0.1",
     "mocha": "^4.0.1",
+    "nock": "^9.1.0",
     "sinon": "^4.1.2",
-    "sinon-chai": "^2.7.0"
+    "sinon-chai": "^2.14.0"
   },
   "main": "index.js",
   "scripts": {
-    "test": "mocha"
+    "test": "HUBOT_LOG_LEVEL=CRITICAL mocha"
   }
 }

@@ -3,14 +3,33 @@
 /* global describe, beforeEach, afterEach, it */
 
 const chai = require("chai");
-const Hubot = require("hubot");
+const nock = require("nock");
 const path = require("path");
+const sinon = require("sinon");
 
+chai.use(require("sinon-chai"));
 const expect = chai.expect;
+
+const Hubot = require("hubot");
 const Robot = Hubot.Robot;
 const TextMessage = Hubot.TextMessage;
 
-chai.use(require("sinon-chai"));
+const startRobot = () => {
+  const robot = new Robot(null, "mock-adapter-v3", false, "Hubot");
+  robot.loadFile(path.resolve("src/"), "hubot-lex.js");
+
+  robot.adapter.on("connected", () => {
+    robot.brain.userForId("1", {
+      name: "john",
+      real_name: "John Doe",
+      room: "#test"
+    });
+  });
+
+  robot.run();
+
+  return robot;
+};
 
 describe("require('hubot-lex')", () => {
   it("exports a function", () => {
@@ -19,27 +38,59 @@ describe("require('hubot-lex')", () => {
 });
 
 describe("hubot-lex", () => {
-  let robot, user;
+  let robot;
+  let user;
+
+  afterEach(() => {
+    delete process.env.LEX_API_URL;
+    delete process.env.LEX_API_KEY;
+    delete process.env.LEX_START_REGEX;
+
+    robot.shutdown();
+  });
+
+  it("doesn't respond if LEX_API_URL not specified", (done) => {
+    robot = startRobot();
+    user = robot.brain.userForName("john");
+
+    const respond = sinon.spy(robot, "respond");
+
+    robot.adapter.receive(new TextMessage(user, "@hubot lex hello"));
+
+    expect(respond).to.have.not.been.called;
+    done();
+  });
+});
+
+describe("hubot-lex", () => {
+  let lex;
+  let robot;
+  let user;
 
   beforeEach(() => {
-    robot = new Robot(null, "mock-adapter-v3", false, "hubot");
-    robot.loadFile(path.resolve("src/"), "hubot-lex.js");
-    robot.adapter.on("connected", () => {
-      robot.brain.userForId("1", {
-        name: "john",
-        real_name: "John Doe",
-        room: "#test"
-      });
-    });
-    robot.run();
+    const lexURL = "http://lex-api-gateway.test.com";
+    lex = nock(lexURL);
+
+    process.env.LEX_API_URL = `${lexURL}/messages`;
+    process.env.LEX_START_REGEX = "lex";
+
+    robot = startRobot();
     user = robot.brain.userForName("john");
   });
 
   afterEach(() => {
+    delete process.env.LEX_API_URL;
+    delete process.env.LEX_START_REGEX;
+
+    nock.cleanAll();
     robot.shutdown();
   });
 
-  it("responds to hello", (done) => {
+  it("responds to /lex/i", (done) => {
+    lex.post("/messages").reply(200, {
+      message: "hello!",
+    });
+
     robot.adapter.on("reply", function (envelope, strings) {
       const answer = strings[0];
 
@@ -48,18 +99,20 @@ describe("hubot-lex", () => {
       done();
     });
 
-    robot.adapter.receive(new TextMessage(user, "hubot hello"));
+    robot.adapter.receive(new TextMessage(user, "@hubot lex hello"));
   });
 
-  it("hears orly", (done) => {
-    robot.adapter.on("send", function (envelope, strings) {
+  it("replies with error message if Lex returns an error", (done) => {
+    lex.post("/messages").reply(500, {});
+
+    robot.adapter.on("reply", function (envelope, strings) {
       const answer = strings[0];
 
-      expect(answer).to.eql("yarly");
+      expect(answer).to.eql("Unable to communicate with AWS Lex.");
 
       done();
     });
 
-    robot.adapter.receive(new TextMessage(user, "just wanted to say orly"));
+    robot.adapter.receive(new TextMessage(user, "@hubot lex hello"));
   });
 });
