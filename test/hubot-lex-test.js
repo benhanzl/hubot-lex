@@ -31,13 +31,22 @@ const startRobot = () => {
   return robot;
 };
 
+beforeEach(() => {
+  nock.disableNetConnect();
+});
+
+afterEach(() => {
+  nock.cleanAll();
+  nock.enableNetConnect();
+});
+
 describe("require('hubot-lex')", () => {
   it("exports a function", () => {
     expect(require("../index")).to.be.a("Function");
   });
 });
 
-describe("hubot-lex", () => {
+describe("hubot-lex (without environment variables)", () => {
   let robot;
   let user;
 
@@ -82,7 +91,6 @@ describe("hubot-lex", () => {
     delete process.env.LEX_API_URL;
     delete process.env.LEX_START_REGEX;
 
-    nock.cleanAll();
     robot.shutdown();
   });
 
@@ -91,11 +99,24 @@ describe("hubot-lex", () => {
       message: "hello!",
     });
 
-    robot.adapter.on("reply", function (envelope, strings) {
-      const answer = strings[0];
+    robot.adapter.on("reply", (envelope, strings) => {
+      expect(strings[0]).to.eql("hello!");
+      done();
+    });
 
-      expect(answer).to.eql("hello!");
+    robot.adapter.receive(new TextMessage(user, "@hubot lex hello"));
+  });
 
+  it("doesn't send @hubot to Lex", (done) => {
+    const request = lex.post("/messages", (body) => {
+      return body.text === "lex hello";
+    }).reply(200, {
+      message: "hello!",
+    });
+
+    robot.adapter.on("reply", (envelope, strings) => {
+      expect(request.isDone());
+      expect(strings[0]).to.eql("hello!");
       done();
     });
 
@@ -105,11 +126,8 @@ describe("hubot-lex", () => {
   it("replies with error message if Lex returns an error", (done) => {
     lex.post("/messages").reply(500, {});
 
-    robot.adapter.on("reply", function (envelope, strings) {
-      const answer = strings[0];
-
-      expect(answer).to.eql("Unable to communicate with AWS Lex.");
-
+    robot.adapter.on("reply", (envelope, strings) => {
+      expect(strings[0]).to.eql("Unable to communicate with AWS Lex.");
       done();
     });
 

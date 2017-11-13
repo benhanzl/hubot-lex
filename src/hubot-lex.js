@@ -50,7 +50,10 @@ module.exports = (robot) => {
       request.header("x-api-key", apiKey);
     }
 
-    request.post(JSON.stringify(match.message))((error, response, body) => {
+    const message = match.message;
+    message.text = message.text.replace(/@hubot /i, "").trim();
+
+    request.post(JSON.stringify(message))((error, response, body) => {
       if (error) {
         robot.logger.error(`hubot-lex: ${error}`);
         match.reply(defaultErrorMessage);
