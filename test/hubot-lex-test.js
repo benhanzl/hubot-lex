@@ -53,7 +53,7 @@ describe("hubot-lex (without environment variables)", () => {
   afterEach(() => {
     delete process.env.LEX_API_URL;
     delete process.env.LEX_API_KEY;
-    delete process.env.LEX_START_REGEX;
+    delete process.env.LEX_START_REGEXP;
 
     robot.shutdown();
   });
@@ -81,7 +81,7 @@ describe("hubot-lex", () => {
     lex = nock(lexURL);
 
     process.env.LEX_API_URL = `${lexURL}/messages`;
-    process.env.LEX_START_REGEX = "lex";
+    process.env.LEX_START_REGEXP = "lex";
 
     robot = startRobot();
     user = robot.brain.userForName("john");
@@ -89,7 +89,7 @@ describe("hubot-lex", () => {
 
   afterEach(() => {
     delete process.env.LEX_API_URL;
-    delete process.env.LEX_START_REGEX;
+    delete process.env.LEX_START_REGEXP;
 
     robot.shutdown();
   });
