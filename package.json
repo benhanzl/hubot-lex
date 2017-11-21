@@ -1,7 +1,7 @@
 {
   "name": "hubot-lex",
   "description": "A hubot script that interacts with AWS Lex",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "author": "Ben Hanzl <ben.hanzl@gmail.com>",
   "license": "MIT",
   "keywords": [
