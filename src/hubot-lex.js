@@ -38,8 +38,17 @@ module.exports = (robot) => {
     robot.logger.info("hubot-lex: LEX_START_REGEXP not specified or unsafe.");
   }
 
-  robot.respond(startRegExp, (match) => {
-    robot.logger.info(`hubot-lex: Responding to ${startRegExp.toString()}.`);
+  robot.respond(/.+/i, (match) => {
+    const conversationKey = `conversation-${match.envelope.room}`;
+    const lastConversation = robot.brain.get(conversationKey);
+
+    if (lastConversation) {
+      robot.logger.info(`hubot-lex: Responding to last conversation: ${conversationKey} at ${lastConversation}.`);
+    } else if (startRegExp.test(match.message.text)) {
+      robot.logger.info(`hubot-lex: Responding to ${startRegExp.toString()}.`);
+    } else {
+      return;
+    }
 
     const request = robot.http(apiURL)
       .header("Accept", "application/json")
@@ -49,7 +58,7 @@ module.exports = (robot) => {
     }
 
     const message = match.message;
-    message.text = message.text.replace(/@hubot /i, "").trim();
+    message.text = message.text.replace(/(@hubot|Hubot:) /i, "").trim();
 
     request.post(JSON.stringify(message))((error, response, body) => {
       if (error) {
@@ -66,7 +75,19 @@ module.exports = (robot) => {
       }
 
       const data = JSON.parse(body);
+
+      if (["ConfirmIntent", "ElicitSlot"].includes(data.dialogState)) {
+        robot.logger.info(`hubot-lex: Starting conversation for ${conversationKey}`);
+        robot.brain.set(conversationKey, Date.now());
+      }
+
+      if (["ElicitIntent", "Failed", "Fulfilled", "ReadyForFulfillment"].includes(data.dialogState)) {
+        robot.logger.info(`hubot-lex: Stoping conversation for ${conversationKey}`);
+        robot.brain.set(conversationKey, null);
+      }
+
       if (data.message) {
+        robot.logger.info(`hubot-lex: Response from AWS Lex: ${JSON.stringify(data)}`);
         match.reply(data.message);
       }
     });

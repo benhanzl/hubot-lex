@@ -94,9 +94,9 @@ describe("hubot-lex", () => {
     robot.shutdown();
   });
 
-  it("responds to /lex/i", (done) => {
+  it("sends text to Lex if it matches the start regexp", (done) => {
     lex.post("/messages").reply(200, {
-      message: "hello!",
+      message: "hello!"
     });
 
     robot.adapter.on("reply", (envelope, strings) => {
@@ -107,11 +107,20 @@ describe("hubot-lex", () => {
     robot.adapter.receive(new TextMessage(user, "@hubot lex hello"));
   });
 
-  it("doesn't send @hubot to Lex", (done) => {
+  it("ignores text if it doesn't match the start regexp", (done) => {
+    const request = sinon.spy(lex, "post");
+
+    robot.adapter.receive(new TextMessage(user, "@hubot hello"));
+
+    expect(request).to.not.be.called;
+    done();
+  });
+
+  it("doesn't send @hubot in the text to Lex", (done) => {
     const request = lex.post("/messages", (body) => {
       return body.text === "lex hello";
     }).reply(200, {
-      message: "hello!",
+      message: "hello!"
     });
 
     robot.adapter.on("reply", (envelope, strings) => {
@@ -132,5 +141,57 @@ describe("hubot-lex", () => {
     });
 
     robot.adapter.receive(new TextMessage(user, "@hubot lex hello"));
+  });
+
+  it("starts a conversation if Lex responds with ConfirmIntent", (done) => {
+    lex.post("/messages").reply(200, {
+      dialogState: "ConfirmIntent",
+      message: "Are you sure?"
+    });
+
+    const conversationKey = `conversation-${user.room}`;
+    expect(robot.brain.get(conversationKey)).to.be.null;
+
+    robot.adapter.on("reply", (envelope, strings) => {
+      expect(strings[0]).to.eql("Are you sure?");
+      expect(robot.brain.get(conversationKey)).to.not.be.null;
+      done();
+    });
+
+    robot.adapter.receive(new TextMessage(user, "@hubot lex start conversation"));
+  });
+
+  it("sends message (that doesn't match start regexp) to Lex if conversation started", (done) => {
+    const conversationKey = `conversation-${user.room}`;
+    robot.brain.set(conversationKey, Date.now());
+
+    lex.post("/messages").reply(200, {
+      message: "hello!"
+    });
+
+    robot.adapter.on("reply", (envelope, strings) => {
+      expect(strings[0]).to.eql("hello!");
+      done();
+    });
+
+    robot.adapter.receive(new TextMessage(user, "@hubot hello"));
+  });
+
+  it("stops a conversation if Lex responds with ElicitIntent", (done) => {
+    lex.post("/messages").reply(200, {
+      dialogState: "Fulfilled",
+      message: "Your request has been completed."
+    });
+
+    const conversationKey = `conversation-${user.room}`;
+    robot.brain.set(conversationKey, Date.now());
+
+    robot.adapter.on("reply", (envelope, strings) => {
+      expect(strings[0]).to.eql("Your request has been completed.");
+      expect(robot.brain.get(conversationKey)).to.be.null;
+      done();
+    });
+
+    robot.adapter.receive(new TextMessage(user, "@hubot lex stop conversation"));
   });
 });

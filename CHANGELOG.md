@@ -8,3 +8,5 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - Start a conversation with AWS Lex.
   - Added by [Ben Hanzl](https://github.com/benhanzl) in Pull Request [#2](https://github.com/benhanzl/hubot-lex/pull/2).
+- Keep a conversation with AWS Lex.
+  - Added by [Ben Hanzl](https://github.com/benhanzl) in Pull Request [#4](https://github.com/benhanzl/hubot-lex/pull/4).
