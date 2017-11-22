@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
-## [0.1.0] - 2017-11-21
+## [0.1.0] - 2017-11-22
 ### Added
 - Start a conversation with AWS Lex.
   - Added by [Ben Hanzl](https://github.com/benhanzl) in Pull Request [#2](https://github.com/benhanzl/hubot-lex/pull/2).
