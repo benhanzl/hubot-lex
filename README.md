@@ -1,4 +1,4 @@
-# hubot-lex [![Build Status](https://travis-ci.org/benhanzl/hubot-lex.svg?branch=master)]
+# hubot-lex [![Build Status](https://travis-ci.org/benhanzl/hubot-lex.svg?branch=master)](https://travis-ci.org/benhanzl/hubot-lex)
 
 A hubot script that interacts with AWS Lex.
 
