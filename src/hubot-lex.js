@@ -16,6 +16,7 @@
 // Author:
 //   Ben Hanzl <ben.hanzl@gmail.com>
 
+const _ = require("lodash");
 const safe = require("safe-regex");
 
 module.exports = (robot) => {
@@ -76,12 +77,12 @@ module.exports = (robot) => {
 
       const data = JSON.parse(body);
 
-      if (["ConfirmIntent", "ElicitSlot"].includes(data.dialogState)) {
+      if (_.includes(["ConfirmIntent", "ElicitSlot"], data.dialogState)) {
         robot.logger.info(`hubot-lex: Starting conversation for ${conversationKey}`);
         robot.brain.set(conversationKey, Date.now());
       }
 
-      if (["ElicitIntent", "Failed", "Fulfilled", "ReadyForFulfillment"].includes(data.dialogState)) {
+      if (_.includes(["ElicitIntent", "Failed", "Fulfilled", "ReadyForFulfillment"], data.dialogState)) {
         robot.logger.info(`hubot-lex: Stoping conversation for ${conversationKey}`);
         robot.brain.set(conversationKey, null);
       }
