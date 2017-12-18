@@ -6,6 +6,8 @@
 // Configuration:
 //   LEX_API_URL - Required. The URL for the AWS Lex API.
 //   LEX_API_KEY - Optional. The x-api-key used for authenticating.
+//   LEX_IGNORE_USER_IDS - Optional. A comman-separated string of HipChat user
+//     IDs to ignore.
 //   LEX_START_REGEXP - Optional. A RegExp for starting a conversation.
 //
 // Commands:
@@ -24,6 +26,11 @@ module.exports = (robot) => {
   const apiKey = process.env.LEX_API_KEY;
   const defaultErrorMessage = "Unable to communicate with AWS Lex.";
 
+  let ignoreUserIds = [];
+  if (process.env.LEX_IGNORE_USER_IDS) {
+    ignoreUserIds = process.env.LEX_IGNORE_USER_IDS.toLowerCase().split(",");
+  }
+
   let startRegExp = /lex/i;
 
   if (!apiURL) {
@@ -40,6 +47,11 @@ module.exports = (robot) => {
   }
 
   robot.respond(/.+/i, (match) => {
+    if (ignoreUserIds.includes(match.envelope.user.id.toLowerCase())) {
+      robot.logger.info(`hubot-lex: Ignoring user ${match.envelope.user.id}`);
+      return;
+    }
+
     const conversationKey = `conversation-${match.envelope.room}`;
     const lastConversation = robot.brain.get(conversationKey);
 
