@@ -24,6 +24,12 @@ const startRobot = () => {
       real_name: "John Doe",
       room: "#test"
     });
+
+    robot.brain.userForId("Ignore", {
+      name: "ignore",
+      real_name: "Ignore User",
+      room: "#test"
+    });
   });
 
   robot.run();
@@ -193,5 +199,54 @@ describe("hubot-lex", () => {
     });
 
     robot.adapter.receive(new TextMessage(user, "@hubot lex stop conversation"));
+  });
+});
+
+describe("hubot-lex (with ignored users)", () => {
+  let lex;
+  let robot;
+
+  let ignoreUser;
+  let user;
+
+  beforeEach(() => {
+    const lexURL = "http://lex-api-gateway.test.com";
+    lex = nock(lexURL);
+
+    process.env.LEX_API_URL = `${lexURL}/messages`;
+    process.env.LEX_IGNORE_USER_IDS = "Ignore,1234";
+
+    robot = startRobot();
+    ignoreUser = robot.brain.userForName("ignore");
+    user = robot.brain.userForName("john");
+  });
+
+  afterEach(() => {
+    delete process.env.LEX_API_URL;
+    delete process.env.LEX_IGNORE_USER_IDS;
+
+    robot.shutdown();
+  });
+
+  it("doesn't send messages to Lex if the user is ingored", (done) => {
+    const request = sinon.spy(lex, "post");
+
+    robot.adapter.receive(new TextMessage(ignoreUser, "@hubot lex hello"));
+
+    expect(request).to.not.be.called;
+    done();
+  });
+
+  it("sends messages to Lex if the user is not ingored", (done) => {
+    lex.post("/messages").reply(200, {
+      message: "hello!"
+    });
+
+    robot.adapter.on("reply", (envelope, strings) => {
+      expect(strings[0]).to.eql("hello!");
+      done();
+    });
+
+    robot.adapter.receive(new TextMessage(user, "@hubot lex hello"));
   });
 });
