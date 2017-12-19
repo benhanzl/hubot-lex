@@ -47,8 +47,9 @@ module.exports = (robot) => {
   }
 
   robot.respond(/.+/i, (match) => {
-    if (ignoreUserIds.includes(match.envelope.user.id.toLowerCase())) {
-      robot.logger.info(`hubot-lex: Ignoring user ${match.envelope.user.id}`);
+    const userId = match.envelope.user.id;
+    if (_.includes(ignoreUserIds, userId.toLowerCase())) {
+      robot.logger.info(`hubot-lex: Ignoring user ${userId}`);
       return;
     }
 
