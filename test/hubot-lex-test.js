@@ -2,6 +2,7 @@
 
 /* global describe, beforeEach, afterEach, it */
 
+const _ = require("lodash");
 const chai = require("chai");
 const nock = require("nock");
 const path = require("path");
@@ -14,28 +15,23 @@ const Hubot = require("hubot");
 const Robot = Hubot.Robot;
 const TextMessage = Hubot.TextMessage;
 
-function startRobot() {
+function startRobot(users) {
   const robot = new Robot(null, "mock-adapter-v3", false, "Hubot");
   robot.loadFile(path.resolve("src/"), "hubot-lex.js");
 
   robot.adapter.on("connected", function() {
-    robot.brain.userForId("1", {
-      name: "john",
-      real_name: "John Doe",
-      room: "#test"
-    });
-
-    robot.brain.userForId("Ignore", {
-      name: "ignore",
-      real_name: "Ignore User",
-      room: "#test"
+    _.forEach(users, function(user) {
+      robot.brain.userForId(user.id, {
+        name: user.name,
+        room: user.room
+      });
     });
   });
 
   robot.run();
 
   return robot;
-};
+}
 
 beforeEach(function() {
   nock.disableNetConnect();
@@ -65,7 +61,11 @@ describe("hubot-lex (without environment variables)", function() {
   });
 
   it("doesn't respond if LEX_API_URL not specified", function(done) {
-    robot = startRobot();
+    const users = [
+      { id: "1", name: "john", room: "#test" }
+    ];
+
+    robot = startRobot(users);
     user = robot.brain.userForName("john");
 
     const respond = sinon.spy(robot, "respond");
@@ -89,7 +89,11 @@ describe("hubot-lex", function() {
     process.env.LEX_API_URL = `${lexURL}/messages`;
     process.env.LEX_START_REGEXP = "lex";
 
-    robot = startRobot();
+    const users = [
+      { id: "1", name: "john", room: "#test" }
+    ];
+
+    robot = startRobot(users);
     user = robot.brain.userForName("john");
   });
 
@@ -206,7 +210,7 @@ describe("hubot-lex (with ignored users)", function() {
   let lex;
   let robot;
 
-  let ignoreUser;
+  let ignoredUser;
   let user;
 
   beforeEach(function() {
@@ -214,11 +218,17 @@ describe("hubot-lex (with ignored users)", function() {
     lex = nock(lexURL);
 
     process.env.LEX_API_URL = `${lexURL}/messages`;
-    process.env.LEX_IGNORE_USER_IDS = "Ignore,1234";
+    process.env.LEX_IGNORE_USER_IDS = "1,3";
 
-    robot = startRobot();
-    ignoreUser = robot.brain.userForName("ignore");
-    user = robot.brain.userForName("john");
+    const users = [
+      { id: "1", name: "john", room: "#test" },
+      { id: "2", name: "jane", room: "#test" }
+    ];
+
+    robot = startRobot(users);
+
+    ignoredUser = robot.brain.userForName("john");
+    user = robot.brain.userForName("jane");
   });
 
   afterEach(function() {
@@ -231,7 +241,7 @@ describe("hubot-lex (with ignored users)", function() {
   it("doesn't send messages to Lex if the user is ingored", function(done) {
     const request = sinon.spy(lex, "post");
 
-    robot.adapter.receive(new TextMessage(ignoreUser, "@hubot lex hello"));
+    robot.adapter.receive(new TextMessage(ignoredUser, "@hubot lex hello"));
 
     expect(request).to.not.be.called;
     done();
